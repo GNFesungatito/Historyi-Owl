@@ -2567,12 +2567,12 @@ function showDisclaimer() {
     document.body.appendChild(layer);
   }
   document.getElementById('disclaimerBody').innerHTML = `
-    <p style="margin-bottom:12px;">1. 本软件为个人学习工具，非商业项目，不盈利，不涉及任何商业推广。</p>
+    <p style="margin-bottom:12px;">1. 本网站（包含前端页面、后台程序、数据库及现有演示内容，以下简称“本网站”）为【Historyi Owl】(目前仅开发包括八年级上册)独立开发的成品项目。本次交易属于成品网站的一次性买断转让。购买方支付完成后，本网站的实际运营权、管理权及后续一切衍生权利义务，即刻转移至购买方。交易完成后，原始开发者（本人）不再参与该网站的任何日常运营、内容更新与维护，亦不承担任何后续责任。</p>
     <p style="margin-bottom:12px;">2. 所有知识点、题目均由个人整理，参考人教版八年级上册教材。内容仅供学习参考，不代表任何官方立场。</p>
-    <p style="margin-bottom:12px;">3. 部分内容由 AI 辅助生成，可能存在错误。使用前请以课本、教辅、老师讲解为准。发现错误请忽略，不要当成权威。</p>
-    <p style="margin-bottom:12px;">4. 文中提到的历史事件、人物、条约，均为公开历史资料，不含主观评价或政治立场。</p>
-    <p style="margin-bottom:12px;">5. 使用者需自行判断内容准确性。因使用本软件造成的任何后果，作者不承担责任。</p>
-    <p style="margin-bottom:12px;">6. 如涉及版权问题，请告知，会立即删除相关内容。</p>
+    <p style="margin-bottom:12px;">3. 部分内容由 AI 辅助生成，可能存在错误。使用前请以课本、教辅、老师讲解为准。发现错误请忽略，不要当成权威。购买方在正式上线前，有义务自行核实、校对并修正。因使用初始AI生成内容导致的任何直接或间接损失（包括但不限于用户投诉、退费、法律纠纷），本人不承担任何责任。</p>
+    <p style="margin-bottom:12px;">4. 文中提到的历史事件、人物、条约，均为公开历史资料，不含主观评价或政治立场。本网站初始演示数据若涉及历史事件、人物、条约等，均来自公开资料，不含主观评价。购买方在后续运营中自行添加、修改或传播的任何内容，由购买方独立承担全部法律责任，与本人及原始开发者无关。</p>
+    <p style="margin-bottom:12px;">5. 购买方仅拥有该网站单个实例的运营使用权。未经本人书面授权，购买方不得将本网站源码/程序进行二次打包、倒卖、分发或用于多站点搭建。一经发现，本人有权追究其侵权责任。</p>
+    <p style="margin-bottom:12px;">6. 购买方在购买/接收本网站前，请务必仔细阅读本协议。一旦完成支付或接收网站权限，即视为购买方已充分理解并同意本协议的全部条款。</p>
     <p style="color:var(--sub);font-size:13px;margin-top:20px;text-align:right;">—— Historyi Owl</p>
   `;
   openModal('disclaimerLayer');
@@ -4226,4 +4226,415 @@ document.addEventListener('click', (e) => {
       }
     }, 800);
   });
+})();
+/* ==========================================================
+   【补丁】跨单元、跨课多选范围选择
+   直接贴在代码最末尾，自动覆盖旧逻辑
+   ========================================================== */
+
+(function () {
+  // 1. 全年级、全单元、全课的数据（先搭骨架，你可以直接改里面的名字）
+  const GRADE_DATA_PATCH = {
+    '七年级': {
+      units: [
+        { id: 1, name: '第一单元 史前时期', lessons: [
+          { id: 1, name: '第1课 中国境内早期人类的代表' },
+          { id: 2, name: '第2课 原始农耕生活' },
+          { id: 3, name: '第3课 远古的传说' }
+        ]},
+        { id: 2, name: '第二单元 夏商周时期', lessons: [
+          { id: 4, name: '第4课 夏商周的更替' },
+          { id: 5, name: '第5课 青铜器与甲骨文' },
+          { id: 6, name: '第6课 动荡的春秋时期' }
+        ]}
+      ]
+    },
+    '八年级': {
+      units: [
+        { id: 1, name: '第一单元 中国开始沦为半殖民地半封建社会', lessons: [
+          { id: 1, name: '第1课 鸦片战争' },
+          { id: 2, name: '第2课 第二次鸦片战争' },
+          { id: 3, name: '第3课 太平天国运动' }
+        ]},
+        { id: 2, name: '第二单元 近代化的早期探索与民族危机的加剧', lessons: [
+          { id: 4, name: '第4课 洋务运动' },
+          { id: 5, name: '第5课 甲午中日战争与列强瓜分中国狂潮' },
+          { id: 6, name: '第6课 戊戌变法' }
+        ]}
+      ]
+    },
+    '九年级': {
+      units: [
+        { id: 1, name: '第一单元 古代亚非文明', lessons: [
+          { id: 1, name: '第1课 古代埃及' },
+          { id: 2, name: '第2课 古代两河流域' },
+          { id: 3, name: '第3课 古代印度' }
+        ]},
+        { id: 2, name: '第二单元 古代欧洲文明', lessons: [
+          { id: 4, name: '第4课 希腊城邦和亚历山大帝国' },
+          { id: 5, name: '第5课 罗马城邦和罗马帝国' },
+          { id: 6, name: '第6课 希腊罗马古典文化' }
+        ]}
+      ]
+    }
+  };
+
+  // 2. 当前用户选中的课（跨单元）
+  window.selectedLessons = [];
+
+  // 3. 自动注入弹窗结构（如果你已经手动写了这个弹窗，这步会自动跳过）
+  function ensureRangeModal() {
+    if (document.getElementById('rangeModal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'rangeModal';
+    modal.className = 'modal hidden';
+    modal.innerHTML = `
+      <div class="modal-box range-box">
+        <div class="modal-head">
+          <span>选择要练习的课</span>
+          <span class="modal-close" onclick="closeModal('rangeModal')">×</span>
+        </div>
+        <div class="range-grade-tip" id="rangeGradeTip">当前：八年级</div>
+        <div class="range-units" id="rangeUnits"></div>
+        <div class="range-actions">
+          <button onclick="patchSelectAll()">全选</button>
+          <button onclick="patchClearAll()">清空</button>
+          <button class="range-confirm" onclick="patchConfirmRange()">确定</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  // 4. 渲染多选列表
+  function patchRenderRangeUnits() {
+    const box = document.getElementById('rangeUnits');
+    if (!box) return;
+    box.innerHTML = '';
+
+    const grade = (window.AppState && AppState.user && AppState.user.grade) || '八年级';
+    const tip = document.getElementById('rangeGradeTip');
+    if (tip) tip.innerText = '当前：' + grade;
+
+    const gradeData = GRADE_DATA_PATCH[grade];
+    if (!gradeData) return;
+
+    gradeData.units.forEach(unit => {
+      const unitBox = document.createElement('div');
+      unitBox.className = 'range-unit';
+
+      const unitHead = document.createElement('div');
+      unitHead.className = 'range-unit-head';
+      unitHead.innerHTML = `<span>${unit.name}</span><span class="range-unit-select">全选本单元</span>`;
+      unitHead.querySelector('.range-unit-select').onclick = () => {
+        const allChecked = unit.lessons.every(l => patchIsSelected(grade, unit.id, l.id));
+        unit.lessons.forEach(l => {
+          if (allChecked) patchRemoveLesson(grade, unit.id, l.id);
+          else patchAddLesson(grade, unit.id, l.id, l.name);
+        });
+        patchRenderRangeUnits();
+      };
+      unitBox.appendChild(unitHead);
+
+      const lessonBox = document.createElement('div');
+      lessonBox.className = 'range-lessons';
+      unit.lessons.forEach(lesson => {
+        const item = document.createElement('div');
+        item.className = 'range-lesson' + (patchIsSelected(grade, unit.id, lesson.id) ? ' active' : '');
+        item.innerText = lesson.name;
+        item.onclick = () => {
+          if (patchIsSelected(grade, unit.id, lesson.id)) {
+            patchRemoveLesson(grade, unit.id, lesson.id);
+          } else {
+            patchAddLesson(grade, unit.id, lesson.id, lesson.name);
+          }
+          patchRenderRangeUnits();
+        };
+        lessonBox.appendChild(item);
+      });
+      unitBox.appendChild(lessonBox);
+      box.appendChild(unitBox);
+    });
+  }
+
+  function patchIsSelected(grade, unitId, lessonId) {
+    return window.selectedLessons.some(l => l.grade === grade && l.unitId === unitId && l.lessonId === lessonId);
+  }
+  function patchAddLesson(grade, unitId, lessonId, lessonName) {
+    if (!patchIsSelected(grade, unitId, lessonId)) {
+      window.selectedLessons.push({ grade, unitId, lessonId, lessonName });
+    }
+  }
+  function patchRemoveLesson(grade, unitId, lessonId) {
+    window.selectedLessons = window.selectedLessons.filter(l =>
+      !(l.grade === grade && l.unitId === unitId && l.lessonId === lessonId)
+    );
+  }
+
+  window.patchSelectAll = function () {
+    const grade = (window.AppState && AppState.user && AppState.user.grade) || '八年级';
+    const gradeData = GRADE_DATA_PATCH[grade];
+    if (!gradeData) return;
+    gradeData.units.forEach(unit => {
+      unit.lessons.forEach(lesson => {
+        patchAddLesson(grade, unit.id, lesson.id, lesson.name);
+      });
+    });
+    patchRenderRangeUnits();
+  };
+
+  window.patchClearAll = function () {
+    window.selectedLessons = [];
+    patchRenderRangeUnits();
+  };
+
+  window.patchConfirmRange = function () {
+    if (window.selectedLessons.length === 0) {
+      if (typeof showToast === 'function') showToast('请至少选择一课');
+      return;
+    }
+    const btnText = document.getElementById('rangeBtnText');
+    if (btnText) btnText.innerText = `已选 ${window.selectedLessons.length} 课`;
+    if (typeof closeModal === 'function') closeModal('rangeModal');
+    if (typeof showToast === 'function') showToast(`已选 ${window.selectedLessons.length} 课，可以开始刷题了`);
+  };
+
+  // 5. 覆盖原来的 openRange
+  window.openRange = function () {
+    ensureRangeModal();
+    const modal = document.getElementById('rangeModal');
+    if (modal) modal.classList.remove('hidden');
+    patchRenderRangeUnits();
+  };
+
+  // 6. 自动注入配套 CSS
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .range-grade-tip { font-size: 13px; color: #7A8AA8; margin-bottom: 12px; }
+    .range-units { max-height: 50vh; overflow-y: auto; padding-right: 4px; }
+    .range-unit { margin-bottom: 16px; background: #F5F9FD; border-radius: 16px; padding: 12px; }
+    .range-unit-head { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+    .range-unit-select { font-size: 12px; color: #4E78A8; background: #EAF3FB; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
+    .range-lessons { display: flex; flex-wrap: wrap; gap: 8px; }
+    .range-lesson { padding: 8px 12px; background: #fff; border: 1.5px solid #E3EDF6; border-radius: 999px; font-size: 12px; color: #7A8AA8; cursor: pointer; transition: all 0.2s; }
+    .range-lesson.active { background: #4E78A8; color: #fff; border-color: #4E78A8; }
+    .range-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .range-actions button { flex: 1; padding: 10px; background: #EAF3FB; color: #4E78A8; border: none; border-radius: 16px; font-size: 13px; cursor: pointer; }
+    .range-actions .range-confirm { background: linear-gradient(135deg, #4E78A8, #3A6088); color: #fff; font-weight: 600; }
+  `;
+  document.head.appendChild(style);
+
+  console.log('✅ 跨单元多选补丁已生效');
+})();
+/* ==========================================================
+   【补丁】全年级课程数据 + 自动覆盖旧数据
+   直接贴在代码最末尾，自动生效
+   ========================================================== */
+
+(function () {
+  // 1. 全年级完整课程数据（部编版）
+  const FULL_GRADE_DATA = {
+    '七年级': {
+      units: [
+        {
+          id: 1,
+          name: '第一单元 史前时期：中国境内早期人类与文明的起源',
+          lessons: [
+            { id: 1, name: '第1课 中国境内早期人类的代表——北京人' },
+            { id: 2, name: '第2课 原始农耕生活' },
+            { id: 3, name: '第3课 远古的传说' }
+          ]
+        },
+        {
+          id: 2,
+          name: '第二单元 夏商周时期：早期国家与社会变革',
+          lessons: [
+            { id: 4, name: '第4课 夏商周的更替' },
+            { id: 5, name: '第5课 青铜器与甲骨文' },
+            { id: 6, name: '第6课 动荡的春秋时期' },
+            { id: 7, name: '第7课 战国时期的社会变化' },
+            { id: 8, name: '第8课 百家争鸣' }
+          ]
+        },
+        {
+          id: 3,
+          name: '第三单元 秦汉时期：统一多民族国家的建立和巩固',
+          lessons: [
+            { id: 9, name: '第9课 秦统一中国' },
+            { id: 10, name: '第10课 秦末农民大起义' },
+            { id: 11, name: '第11课 西汉建立和“文景之治”' },
+            { id: 12, name: '第12课 汉武帝巩固大一统王朝' },
+            { id: 13, name: '第13课 东汉的兴衰' },
+            { id: 14, name: '第14课 沟通中外文明的“丝绸之路”' },
+            { id: 15, name: '第15课 两汉的科技和文化' }
+          ]
+        },
+        {
+          id: 4,
+          name: '第四单元 三国两晋南北朝时期：政权分立与民族交融',
+          lessons: [
+            { id: 16, name: '第16课 三国鼎立' },
+            { id: 17, name: '第17课 西晋的短暂统一和北方各族的内迁' },
+            { id: 18, name: '第18课 东晋南朝时期江南地区的开发' },
+            { id: 19, name: '第19课 北魏政治和北方民族大交融' },
+            { id: 20, name: '第20课 魏晋南北朝的科技与文化' }
+          ]
+        }
+      ]
+    },
+
+    '八年级': {
+      units: [
+        {
+          id: 1,
+          name: '第一单元 中国开始沦为半殖民地半封建社会',
+          lessons: [
+            { id: 1, name: '第1课 鸦片战争' },
+            { id: 2, name: '第2课 第二次鸦片战争' },
+            { id: 3, name: '第3课 太平天国运动' }
+          ]
+        },
+        {
+          id: 2,
+          name: '第二单元 近代化的早期探索与民族危机的加剧',
+          lessons: [
+            { id: 4, name: '第4课 洋务运动' },
+            { id: 5, name: '第5课 甲午中日战争与列强瓜分中国狂潮' },
+            { id: 6, name: '第6课 戊戌变法' },
+            { id: 7, name: '第7课 抗击八国联军' }
+          ]
+        },
+        {
+          id: 3,
+          name: '第三单元 资产阶级民主革命与中华民国的建立',
+          lessons: [
+            { id: 8, name: '第8课 革命先行者孙中山' },
+            { id: 9, name: '第9课 辛亥革命' },
+            { id: 10, name: '第10课 中华民国的创建' },
+            { id: 11, name: '第11课 北洋政府的统治与军阀割据' }
+          ]
+        },
+        {
+          id: 4,
+          name: '第四单元 新时代的曙光',
+          lessons: [
+            { id: 12, name: '第12课 新文化运动' },
+            { id: 13, name: '第13课 五四运动' },
+            { id: 14, name: '第14课 中国共产党诞生' }
+          ]
+        },
+        {
+          id: 5,
+          name: '第五单元 从国共合作到国共对立',
+          lessons: [
+            { id: 15, name: '第15课 北伐战争' },
+            { id: 16, name: '第16课 毛泽东开辟井冈山道路' },
+            { id: 17, name: '第17课 中国工农红军长征' }
+          ]
+        },
+        {
+          id: 6,
+          name: '第六单元 中华民族的抗日战争',
+          lessons: [
+            { id: 18, name: '第18课 从九一八事变到西安事变' },
+            { id: 19, name: '第19课 七七事变与全民族抗战' },
+            { id: 20, name: '第20课 正面战场的抗战' },
+            { id: 21, name: '第21课 敌后战场的抗战' },
+            { id: 22, name: '第22课 抗日战争的胜利' }
+          ]
+        },
+        {
+          id: 7,
+          name: '第七单元 人民解放战争',
+          lessons: [
+            { id: 23, name: '第23课 内战爆发' },
+            { id: 24, name: '第24课 人民解放战争的胜利' }
+          ]
+        },
+        {
+          id: 8,
+          name: '第八单元 近代经济、社会生活与教育文化事业的发展',
+          lessons: [
+            { id: 25, name: '第25课 经济和社会生活的变化' },
+            { id: 26, name: '第26课 教育文化事业的发展' }
+          ]
+        }
+      ]
+    },
+
+    '九年级': {
+      units: [
+        {
+          id: 1,
+          name: '第一单元 古代亚非文明',
+          lessons: [
+            { id: 1, name: '第1课 古代埃及' },
+            { id: 2, name: '第2课 古代两河流域' },
+            { id: 3, name: '第3课 古代印度' }
+          ]
+        },
+        {
+          id: 2,
+          name: '第二单元 古代欧洲文明',
+          lessons: [
+            { id: 4, name: '第4课 希腊城邦和亚历山大帝国' },
+            { id: 5, name: '第5课 罗马城邦和罗马帝国' },
+            { id: 6, name: '第6课 希腊罗马古典文化' }
+          ]
+        },
+        {
+          id: 3,
+          name: '第三单元 封建时代的欧洲',
+          lessons: [
+            { id: 7, name: '第7课 基督教的兴起和法兰克王国' },
+            { id: 8, name: '第8课 西欧庄园' },
+            { id: 9, name: '第9课 中世纪城市和大学的兴起' },
+            { id: 10, name: '第10课 拜占庭帝国和《查士丁尼法典》' }
+          ]
+        },
+        {
+          id: 4,
+          name: '第四单元 封建时代的亚洲国家',
+          lessons: [
+            { id: 11, name: '第11课 古代日本' },
+            { id: 12, name: '第12课 阿拉伯帝国' }
+          ]
+        },
+        {
+          id: 5,
+          name: '第五单元 步入近代',
+          lessons: [
+            { id: 13, name: '第13课 西欧经济和社会的发展' },
+            { id: 14, name: '第14课 文艺复兴运动' },
+            { id: 15, name: '第15课 探寻新航路' },
+            { id: 16, name: '第16课 早期殖民掠夺' }
+          ]
+        },
+        {
+          id: 6,
+          name: '第六单元 资本主义制度的初步确立',
+          lessons: [
+            { id: 17, name: '第17课 君主立宪制的英国' },
+            { id: 18, name: '第18课 美国的独立' },
+            { id: 19, name: '第19课 法国大革命和拿破仑帝国' }
+          ]
+        },
+        {
+          id: 7,
+          name: '第七单元 工业革命和国际共产主义运动的兴起',
+          lessons: [
+            { id: 20, name: '第20课 第一次工业革命' },
+            { id: 21, name: '第21课 马克思主义的诞生和国际共产主义运动的兴起' }
+          ]
+        }
+      ]
+    }
+  };
+
+  // 2. 自动覆盖全局的 GRADE_DATA（如果原来的存在）
+  if (typeof window !== 'undefined') {
+    window.GRADE_DATA = FULL_GRADE_DATA;
+  }
+
+  console.log('✅ 全年级课程数据补丁已生效（七、八、九年级）');
 })();
